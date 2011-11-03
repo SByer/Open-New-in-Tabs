@@ -1,0 +1,15 @@
+Open New in Tabs
+
+My first Chromium extension, intended mostly as a learning experience.
+
+Set up as a page action, this extension activates itself for a specific forum I
+visit every day. On that page, clicking on the page action scrapes the page for
+all the links that go to the newest post in that thread, then opens them in
+tabs, staggered using a timer to not crunch Chromium too badly.
+
+TODO:
+Parameterize everything!
+- Sites to activate on, regexp to use to scrape the links.
+- Time between opening the tabs.
+- Order to open the links in (hardwired to last to first right now).
+- Fix the icons! Bad icons! Bad!
