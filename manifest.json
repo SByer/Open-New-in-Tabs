@@ -1,0 +1,25 @@
+{
+  "name": "Open New Posts in Tabs",
+  "version": "1.0",
+  "description": "Finds the links to go to the first new post for each thread on the page, and opens each of them in a new tab.",
+  "background_page": "background.html",
+  "page_action" : {
+    "default_icon" : "firstnew-19.png",
+    "default_title" : "Open all threads at the newest post in tabs."
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://www.teslamotorsclub.com/search*"],
+      "js": ["content-newintabs.js"],
+      "run-at": "document_end"
+    }
+  ],
+  "permissions":  [
+    "tabs",
+    "http://www.teslamotorsclub.com/search*"
+  ],
+  "icons" : {
+    "48" : "firstnew-48.png",
+    "128" : "firstnew-128.png"
+  }
+}

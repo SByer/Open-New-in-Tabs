@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript">
+
+function checkForValidUrl(tabId, changeInfo, tab) {
+  if (tab.url.search('www.teslamotorsclub.com/search') > -1) {
+    chrome.pageAction.show(tabId);
+  }
+};
+
+function openLink(link, first) {
+  chrome.tabs.create({"url":link, "selected":first});
+}
+
+// Called when we get the newpost links back from the content script.
+function openLinks(links) {
+  var first = true;
+  for (var i = 0; i < links.length; ++i) {
+    var j = links.length - 1 - i;
+    setTimeout(openLink.bind(this, links[i].href, first), 3000 * i);
+    first = false;
+  }
+};
+
+// Called when the page action is clicked on.
+function getAndOpenNewpostLinks(tab) {
+  var tabId = tab.id;
+  chrome.tabs.sendRequest(tabId, {}, function(results) {
+    openLinks(results);
+  });
+};
+
+// Listen for clicks on the page action.
+chrome.pageAction.onClicked.addListener(getAndOpenNewpostLinks);
+chrome.browserAction.onClicked.addListener(getAndOpenNewpostLinks);
+
+// Listen for any changes to the URL of any tab.
+chrome.tabs.onUpdated.addListener(checkForValidUrl);
+
+</script>
+</head>
+</html>
