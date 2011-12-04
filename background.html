@@ -9,31 +9,71 @@ function checkForValidUrl(tabId, changeInfo, tab) {
   }
 };
 
-function openLink(link, first) {
-  chrome.tabs.create({"url":link, "selected":first});
+// When we're in a holding pattern waiting for the window tab count to go down.
+function recheckTabCount(links, index, tab) {
+  chrome.tabs.getAllInWindow(
+      tab.windowId,
+      checkTabCount.bind(this, links, index, tab));
+}
+
+// Called when it's time to open a new tab.
+function checkTabCount(links, index, tab, tabs) {
+  if (tabs.length < 8) {
+    openLinks(links, index, tab);
+  } else {
+    setTimeout(recheckTabCount.bind(this, links, index, tab), 2000);
+  }
+}
+
+// Called when the status of a tab changes.
+function waitForTab(links, index, tab, change_tabId, changeInfo, change_tab) {
+  if (tab.id == change_tabId && changeInfo.status == "complete") {
+    chrome.tabs.onUpdated.removeListener(waitForTab.bind(this, links, 
+                                                         index, tab));
+    chrome.tabs.getAllInWindow(
+        change_tab.windowId,
+        checkTabCount.bind(this, links, index, change_tab));
+  }
+}
+
+function tabCreated(links, index, tab) {
+  if (index >= 0 && index < links.length) {
+    if (tab.status != "complete") {
+      chrome.tabs.onUpdated.addListener(waitForTab.bind(this, links,
+                                                        index, tab));      
+    } else {
+      chrome.tabs.getAllInWindow(
+          tab.windowId,
+          checkTabCount.bind(this, links, index, tab));
+    }
+  }
 }
 
 // Called when we get the newpost links back from the content script.
-function openLinks(links) {
-  var first = true;
-  for (var i = 0; i < links.length; ++i) {
-    var j = links.length - 1 - i;
-    setTimeout(openLink.bind(this, links[i].href, first), 3000 * i);
-    first = false;
+function openLinks(links, index, tab) {
+  if (tab.status != "complete" || index < 0 || index >= links.length) {
+    return;
   }
+  var href = links[index].href;
+  var selected = (index == links.length - 1);
+  chrome.tabs.create({"windowId": tab.windowId,
+                      "url":href,
+                      "selected":selected}, 
+                     tabCreated.bind(this, links, index-1));
 };
+
 
 // Called when the page action is clicked on.
 function getAndOpenNewpostLinks(tab) {
   var tabId = tab.id;
-  chrome.tabs.sendRequest(tabId, {}, function(results) {
-    openLinks(results);
+  chrome.tabs.sendRequest(tabId, {}, function(links) {
+    openLinks(links, links.length - 1, tab);
   });
 };
 
 // Listen for clicks on the page action.
 chrome.pageAction.onClicked.addListener(getAndOpenNewpostLinks);
-chrome.browserAction.onClicked.addListener(getAndOpenNewpostLinks);
+// chrome.browserAction.onClicked.addListener(getAndOpenNewpostLinks);
 
 // Listen for any changes to the URL of any tab.
 chrome.tabs.onUpdated.addListener(checkForValidUrl);
